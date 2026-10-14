@@ -3,7 +3,8 @@ import { getLegacyStatuses } from "@/lib/legacy";
 
 // Passing a plain "provider/model" string makes the AI SDK route through
 // Vercel AI Gateway. Auth comes from AI_GATEWAY_API_KEY (local) or OIDC (on Vercel).
-const MODEL = "anthropic/claude-haiku-5.5";
+// Override with the AI_MODEL env var (e.g. in Vercel) without a code change.
+const MODEL = process.env.AI_MODEL ?? "poolside/laguna-s-2.1-free";
 
 export async function GET(request: Request) {
   const fail = new URL(request.url).searchParams.get("fail") === "1";
