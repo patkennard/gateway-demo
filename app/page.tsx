@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ServiceStatus } from "./api/legacy/route";
+import type { ServiceStatus } from "@/lib/legacy";
 
 type Result = {
   summary: string;
@@ -21,8 +21,14 @@ export default function Page() {
     setError(null);
     fetch(`/api/summarize${simulateFail ? "?fail=1" : ""}`)
       .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+        const text = await res.text();
+        let body;
+        try {
+          body = JSON.parse(text);
+        } catch {
+          throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
+        }
+        if (!res.ok) throw new Error([body.error, body.detail].filter(Boolean).join(": ") || `HTTP ${res.status}`);
         setResult(body);
       })
       .catch((e: Error) => {

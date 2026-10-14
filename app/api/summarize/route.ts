@@ -1,28 +1,19 @@
 import { generateText } from "ai";
+import { getLegacyStatuses } from "@/lib/legacy";
 
 // Passing a plain "provider/model" string makes the AI SDK route through
 // Vercel AI Gateway. Auth comes from AI_GATEWAY_API_KEY (local) or OIDC (on Vercel).
 const MODEL = "anthropic/claude-haiku-5.5";
 
 export async function GET(request: Request) {
-  // Forward ?fail=1 so the whole chain can be tested end to end.
-  const { searchParams } = new URL(request.url);
-  const legacyUrl = new URL("/api/legacy", request.url);
-  if (searchParams.get("fail") === "1") legacyUrl.searchParams.set("fail", "1");
+  const fail = new URL(request.url).searchParams.get("fail") === "1";
 
-  let legacy: Response;
+  let data;
   try {
-    legacy = await fetch(legacyUrl, { cache: "no-store" });
+    data = await getLegacyStatuses(fail);
   } catch {
-    return Response.json({ error: "Could not reach legacy API" }, { status: 502 });
+    return Response.json({ error: "Legacy API failed" }, { status: 502 });
   }
-  if (!legacy.ok) {
-    return Response.json(
-      { error: "Legacy API failed", upstreamStatus: legacy.status },
-      { status: 502 },
-    );
-  }
-  const data = await legacy.json();
 
   try {
     const { text } = await generateText({
